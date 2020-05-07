@@ -963,7 +963,7 @@ def main(_):
       tf.logging.info("***** Predict results *****")
     
       # Modification 1/1: Add column names to dataframe's header ######################################
-      first_line = "\t".join( str(label) for label in label_list ) + "\n"
+      first_line = "\t".join( str(lab) for lab in label_list ) + "\n"
       writer.write(first_line)
       #################################################################################################
       
