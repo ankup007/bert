@@ -961,6 +961,12 @@ def main(_):
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     with tf.gfile.GFile(output_predict_file, "w") as writer:
       tf.logging.info("***** Predict results *****")
+    
+      # Modification 1/1: Add column names to dataframe's header ######################################
+      first_line = "\t".join( str(label) for label in label_list ) + "\n"
+      writer.write(first_line)
+      #################################################################################################
+      
       for prediction in result:
         output_line = "\t".join(
             str(class_probability) for class_probability in prediction) + "\n"
