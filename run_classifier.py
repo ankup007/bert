@@ -370,12 +370,17 @@ class WongnaiProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_wongnai(os.path.join(data_dir, "w_review_train.csv")), "train")
+        self._read_wongnai(os.path.join(data_dir, "train.csv")), "train")
+
+  def get_dev_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "dev.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_wongnai(os.path.join(data_dir, "test_file.csv")), "test")
+        self._read_wongnai(os.path.join(data_dir, "dev.csv")), "test")
 
   def get_labels(self):
     """See base class."""
@@ -399,8 +404,9 @@ class WongnaiProcessor(DataProcessor):
         continue
       guid = "%s-%s" % (set_type, i)
       if set_type == "test":
-        text_a = tokenization.convert_to_unicode(line[1])
-        label = "3"
+        text_a = tokenization.convert_to_unicode(line[0])
+        #label = "3" # "score"
+        label = tokenization.convert_to_unicode(line[1])
       else:
         text_a = tokenization.convert_to_unicode(line[0])
         label = tokenization.convert_to_unicode(line[1])
