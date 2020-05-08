@@ -389,7 +389,7 @@ class WongnaiProcessor(DataProcessor):
   def _read_wongnai(self, input_file):
     """Reads a semicolon separated value file."""
     with tf.gfile.Open(input_file, "r") as f:
-      reader = csv.reader(f, delimiter=";")
+      reader = csv.reader(f, delimiter=",")
       lines = []
       for line in reader:
         lines.append(line)
