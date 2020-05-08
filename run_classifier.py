@@ -405,8 +405,7 @@ class WongnaiProcessor(DataProcessor):
       guid = "%s-%s" % (set_type, i)
       if set_type == "test":
         text_a = tokenization.convert_to_unicode(line[0])
-        #label = "3" # "score"
-        label = tokenization.convert_to_unicode(line[1])
+        label = "3" # "score"
       else:
         text_a = tokenization.convert_to_unicode(line[0])
         label = tokenization.convert_to_unicode(line[1])
