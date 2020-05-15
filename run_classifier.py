@@ -390,6 +390,7 @@ class WongnaiProcessor(DataProcessor):
     """Reads a semicolon separated value file."""
     with tf.gfile.Open(input_file, "r") as f:
       reader = csv.reader(f, delimiter=",")
+      next(reader, None) # skip the headers
       lines = []
       for line in reader:
         lines.append(line)
@@ -409,6 +410,57 @@ class WongnaiProcessor(DataProcessor):
       else:
         text_a = tokenization.convert_to_unicode(line[0])
         label = tokenization.convert_to_unicode(line[1])
+      examples.append(
+          InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
+
+class TruevoiceProcessor(DataProcessor):
+  """Processor for the Truevoice data set."""
+
+  def get_train_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_truevoice(os.path.join(data_dir, "mari_train.csv")), "train")
+
+  def get_dev_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_tsv(os.path.join(data_dir, "mari_test.csv")), "dev")
+
+  def get_test_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_truevoice(os.path.join(data_dir, "mari_test.csv")), "test")
+
+  def get_labels(self):
+    """See base class."""
+    return ['billing and payment', 'promotions', 'internet', 'other queries', 'international dialing', 'true money', 'lost and stolen']
+
+  def _read_truevoice(self, input_file):
+    """Reads a semicolon separated value file."""
+    with tf.gfile.Open(input_file, "r") as f:
+      reader = csv.reader(f, delimiter=",")
+      next(reader, None) # skip the headers
+      lines = []
+      for line in reader:
+        lines.append(line)
+      return lines 
+
+  def _create_examples(self, lines, set_type):
+    """Creates examples for the training and dev sets."""
+    examples = []
+    for (i, line) in enumerate(lines):
+      # Only the test set has a header
+      if set_type == "test" and i == 0:
+        continue
+      guid = "%s-%s" % (set_type, i)
+      if set_type == "test":
+        text_a = tokenization.convert_to_unicode(line[0]) # 'texts' column
+        label = "billing and payment"
+      else:
+        text_a = tokenization.convert_to_unicode(line[0]) # 'texts' column
+        label = tokenization.convert_to_unicode(line[4]) # 'destination' column
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
     return examples
@@ -806,6 +858,7 @@ def main(_):
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
       "wongnai": WongnaiProcessor,
+      "truevoice": TruevoiceProcessor # Modification: Add TruevoiceProcessor to processors
   }
 
   if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
@@ -834,7 +887,8 @@ def main(_):
 
   label_list = processor.get_labels()
 
-  if (task_name == 'xnli' and FLAGS.xnli_language == 'th') or task_name == 'wongnai':
+  # Modification: Add " or task_name == 'truevoice' " ######################################
+  if (task_name == 'xnli' and FLAGS.xnli_language == 'th') or task_name == 'wongnai' or task_name == 'truevoice':
     if not FLAGS.spm_file:
       print("Please specify the SentencePiece model file by using --spm_file.")
       return
@@ -967,7 +1021,7 @@ def main(_):
     with tf.gfile.GFile(output_predict_file, "w") as writer:
       tf.logging.info("***** Predict results *****")
     
-      # Modification 1/1: Add column names to dataframe's header ######################################
+      # Modification: Add column names to dataframe's header ######################################
       first_line = "\t".join( str(lab) for lab in label_list ) + "\n"
       writer.write(first_line)
       #################################################################################################
