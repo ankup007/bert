@@ -375,7 +375,7 @@ class WongnaiProcessor(DataProcessor):
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "test.csv")), "dev")
+        self._read_wongnai(os.path.join(data_dir, "test.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
@@ -426,7 +426,7 @@ class TruevoiceProcessor(DataProcessor):
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "mari_test.csv")), "dev")
+        self._read_truevoice(os.path.join(data_dir, "mari_test.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
@@ -456,10 +456,10 @@ class TruevoiceProcessor(DataProcessor):
         continue
       guid = "%s-%s" % (set_type, i)
       if set_type == "test":
-        text_a = tokenization.convert_to_unicode(line[0]) # 'texts' column
+        text_a = tokenization.convert_to_unicode(line[0]) # line[1] for deepcut texts
         label = "billing and payment"
       else:
-        text_a = tokenization.convert_to_unicode(line[0]) # 'texts' column
+        text_a = tokenization.convert_to_unicode(line[0]) # line[1] for deepcut texts
         label = tokenization.convert_to_unicode(line[4]) # 'destination' column
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
