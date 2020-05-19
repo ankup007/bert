@@ -421,17 +421,17 @@ class TruevoiceProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_truevoice(os.path.join(data_dir, "mari_train.csv")), "train")
+        self._read_truevoice(os.path.join(data_dir, "mari-train-balanced.csv")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_truevoice(os.path.join(data_dir, "mari_test.csv")), "dev")
+        self._read_truevoice(os.path.join(data_dir, "mari-test-balanced.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_truevoice(os.path.join(data_dir, "mari_test.csv")), "test")
+        self._read_truevoice(os.path.join(data_dir, "mari-test-balanced.csv")), "test")
 
   def get_labels(self):
     """See base class."""
