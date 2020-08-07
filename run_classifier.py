@@ -465,6 +465,56 @@ class TruevoiceProcessor(DataProcessor):
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
     return examples
 
+class WisesightProcessor(DataProcessor):
+  """Processor for the Wisesight sentiment data set."""
+
+  def get_train_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_wisesight(os.path.join(data_dir, "train.csv")), "train")
+
+  def get_dev_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_wisesight(os.path.join(data_dir, "test.csv")), "dev")
+
+  def get_test_examples(self, data_dir):
+    """See base class."""
+    return self._create_examples(
+        self._read_wisesight(os.path.join(data_dir, "test.csv")), "test")
+
+  def get_labels(self):
+    """See base class."""
+    return ["pos", "neg", "neu"]
+
+  def _read_wisesight(self, input_file):
+    """Reads a semicolon separated value file."""
+    with tf.gfile.Open(input_file, "r") as f:
+      reader = csv.reader(f, delimiter=",")
+      next(reader, None) # skip the headers
+      lines = []
+      for line in reader:
+        lines.append(line)
+      return lines 
+
+  def _create_examples(self, lines, set_type):
+    """Creates examples for the training and dev sets."""
+    examples = []
+    for (i, line) in enumerate(lines):
+#       # Only the test set has a header
+#       if set_type == "test" and i == 0:
+#         continue
+      guid = "%s-%s" % (set_type, i)
+      if set_type == "test":
+        text_a = tokenization.convert_to_unicode(line[0])
+        label = "pos"
+      else:
+        text_a = tokenization.convert_to_unicode(line[0])
+        label = tokenization.convert_to_unicode(line[1])
+      examples.append(
+          InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+    return examples
+
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
@@ -858,7 +908,8 @@ def main(_):
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
       "wongnai": WongnaiProcessor,
-      "truevoice": TruevoiceProcessor # Modification: Add TruevoiceProcessor to processors
+      "truevoice": TruevoiceProcessor, # Modification: Add TruevoiceProcessor to processors
+      "wisesight": WisesightProcessor
   }
 
   if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
@@ -888,7 +939,7 @@ def main(_):
   label_list = processor.get_labels()
 
   # Modification: Add " or task_name == 'truevoice' " ######################################
-  if (task_name == 'xnli' and FLAGS.xnli_language == 'th') or task_name == 'wongnai' or task_name == 'truevoice':
+  if (task_name == 'xnli' and FLAGS.xnli_language == 'th') or task_name == 'wongnai' or task_name == 'truevoice' or task_name == 'wisesight':
     if not FLAGS.spm_file:
       print("Please specify the SentencePiece model file by using --spm_file.")
       return
