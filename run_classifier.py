@@ -57,7 +57,7 @@ flags.DEFINE_string(
     "Initial checkpoint (usually from a pre-trained BERT model).")
 
 flags.DEFINE_bool(
-    "do_lower_case", False,
+    "do_lower_case", True,
     "Whether to lower case the input text. Should be True for uncased "
     "models and False for cased models.")
 
@@ -74,6 +74,8 @@ flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
 flags.DEFINE_bool(
     "do_predict", False,
     "Whether to run the model in inference mode on the test set.")
+
+flags.DEFINE_bool("do_export", False, "Whether to export model.")
 
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
@@ -501,9 +503,6 @@ class WisesightProcessor(DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-#       # Only the test set has a header
-#       if set_type == "test" and i == 0:
-#         continue
       guid = "%s-%s" % (set_type, i)
       if set_type == "test":
         text_a = tokenization.convert_to_unicode(line[0])
@@ -898,6 +897,37 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
     features.append(feature)
   return features
 
+def serving_input_fn():
+    with tf.variable_scope("foo"):
+      feature_spec = {
+          "input_ids": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+          "input_mask": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+          "segment_ids": tf.FixedLenFeature([FLAGS.max_seq_length], tf.int64),
+          "label_ids": tf.FixedLenFeature([], tf.int64)
+      }
+      serialized_tf_example = tf.placeholder(dtype=tf.string,
+                                             shape=[FLAGS.predict_batch_size],
+                                             name='input_example_tensor')
+
+      receiver_tensors = {'examples': serialized_tf_example}
+      features = tf.parse_example(serialized_tf_example, feature_spec)
+      return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
+
+def serving_input_receiver_fn():
+    """An input receiver that expects a serialized tf.Example."""
+    reciever_tensors = {
+        "input_ids": tf.placeholder(dtype=tf.int64,
+                                    shape=[1, FLAGS.max_seq_length])
+    }
+    features = {
+        "input_ids": reciever_tensors['input_ids'],
+        "input_mask": 1 - tf.cast(tf.equal(reciever_tensors['input_ids'], 0), dtype=tf.int64),
+        "segment_ids": tf.zeros(dtype=tf.int64,
+                                shape=[1, FLAGS.max_seq_length]),
+        'label_ids': tf.zeros(dtype=tf.int64, shape=[1, 1])
+    }
+    return tf.estimator.export.ServingInputReceiver(features, reciever_tensors)
+
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
@@ -912,9 +942,9 @@ def main(_):
       "wisesight": WisesightProcessor
   }
 
-  if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
+  if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict and not FLAGS.do_export:
     raise ValueError(
-        "At least one of `do_train`, `do_eval` or `do_predict' must be True.")
+        "At least one of `do_train`, `do_eval` or `do_predict' or `do_export' must be True.")
 
   bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -1081,6 +1111,11 @@ def main(_):
         output_line = "\t".join(
             str(class_probability) for class_probability in prediction) + "\n"
         writer.write(output_line)
+        
+  if FLAGS.do_export:
+    estimator._export_to_tpu = False
+    print("Estimator save model..")
+    estimator.export_savedmodel(os.path.join(FLAGS.output_dir, 'saved_model'), serving_input_receiver_fn)
 
 
 if __name__ == "__main__":
