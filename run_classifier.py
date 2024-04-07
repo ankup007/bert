@@ -931,7 +931,7 @@ def serving_input_receiver_fn():
 
 def main(_):
   tf.logging.set_verbosity(tf.logging.INFO)
-
+  tf.logging.info("just checking if editing is working :Anku")
   processors = {
       "cola": ColaProcessor,
       "mnli": MnliProcessor,
